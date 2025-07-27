@@ -1,57 +1,96 @@
-<script>
-let uploadedFile = null;
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>测测你是3D吗?来试试吧!</title>
+  <!-- 1) 从 CDN 引入 face-api.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    button { margin-left: 10px; }
+    #output { white-space: pre-wrap; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>3D检测器 – 检测你是不是3D!!</h1>
+  <input type="file" id="upload" accept="image/*">
+  <button id="goBtn">开始预测</button>
+  <pre id="output">请先加载模型并选择图片，然后点击“开始预测”。</pre>
 
-// 模型加载完成后打印
-Promise.all([
-  faceapi.nets.ssdMobilenetv1.loadFromUri('/static/models'),
-  faceapi.nets.faceRecognitionNet.loadFromUri('/static/models'),
-]).then(() => {
-  console.log('✔ 模型加载完成');
-});
+  <!-- 2) 自定义脚本：一定要放在上面 face-api.js 之后 -->
+  <script>
+  let uploadedFile = null;
 
-// 选择文件时打印
-document.getElementById('upload').onchange = e => {
-  uploadedFile = e.target.files[0];
-  console.log('✔ 已选中文件：', uploadedFile && uploadedFile.name);
-  document.getElementById('output').textContent = '已选择：' + (uploadedFile?.name||'');
-};
-
-// 点击按钮时打印
-document.getElementById('goBtn').onclick = async () => {
-  console.log('▶ 点击了“开始预测”按钮');
-  if (!uploadedFile) {
-    console.warn('⚠️ 还没选择文件');
-    alert('请先选择一张图片！');
-    return;
-  }
-
-  console.log('▶ 开始 face-api 检测');
-  const img = await faceapi.bufferToImage(uploadedFile);
-  console.log('▶ image object 准备好');
-  const dets = await faceapi.detectAllFaces(img)
-                       .withFaceLandmarks()
-                       .withFaceDescriptors();
-  console.log('▶ 检测到人脸数量：', dets.length);
-  if (dets.length === 0) {
-    document.getElementById('output').textContent = '未检测到人脸，请换张清晰的正面照片。';
-    return;
-  }
-
-  const descriptors = dets.map(d => Array.from(d.descriptor));
-  console.log('▶ descriptors:', descriptors);
-  console.log('▶ 发起 POST /predict');
-  const res = await fetch('/predict', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({descriptors})
+  // 1. 预加载模型
+  Promise.all([
+    faceapi.nets.ssdMobilenetv1.loadFromUri('/static/models'),
+    faceapi.nets.faceRecognitionNet.loadFromUri('/static/models'),
+  ]).then(() => {
+    console.log('✔ 模型加载完成');
+    document.getElementById('output').textContent = '模型加载完成！请选择图片。';
+  }).catch(err => {
+    console.error('模型加载失败:', err);
+    document.getElementById('output').textContent = '模型加载失败，请检查控制台。';
   });
-  console.log('▶ POST 完成，等待结果');
-  const json = await res.json();
-  console.log('▶ 后端返回数据：', json);
 
-  document.getElementById('output').textContent =
-    json.map((r,i) =>
-      `人脸${i+1}: 对比人类智慧学家的相似度 ${(r.sim*100).toFixed(2)}%, IQ ${r.iq.toFixed(1)} —— ${r.label}`
-    ).join('\n');
-};
-</script>
+  // 2. 缓存选中文件
+  document.getElementById('upload').onchange = e => {
+    uploadedFile = e.target.files[0];
+    console.log('✔ 已选中文件：', uploadedFile && uploadedFile.name);
+    document.getElementById('output').textContent = '已选择：' + (uploadedFile?.name || '');
+  };
+
+  // 3. 点击按钮触发预测
+  document.getElementById('goBtn').onclick = async () => {
+    console.log('▶ 点击了“开始预测”按钮');
+    if (!uploadedFile) {
+      alert('请先选择一张图片！');
+      return;
+    }
+
+    document.getElementById('output').textContent = '正在检测人脸，请稍候…';
+
+    try {
+      // 转成 HTMLImageElement
+      const img = await faceapi.bufferToImage(uploadedFile);
+      console.log('▶ Image 对象创建完成');
+
+      // 检测人脸并提取 descriptor
+      const dets = await faceapi.detectAllFaces(img)
+                           .withFaceLandmarks()
+                           .withFaceDescriptors();
+      console.log('▶ 检测到人脸数量：', dets.length);
+
+      if (dets.length === 0) {
+        document.getElementById('output').textContent = '未检测到人脸，请换张清晰的正面照片。';
+        return;
+      }
+
+      // 构造 descriptors 数组
+      const descriptors = dets.map(d => Array.from(d.descriptor));
+      console.log('▶ descriptors:', descriptors);
+
+      // 发起后端请求
+      document.getElementById('output').textContent = '已检测到 ' + descriptors.length + ' 张人脸，正在预测 IQ…';
+      const res = await fetch('/predict', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({descriptors})
+      });
+      const json = await res.json();
+      console.log('▶ 后端返回数据：', json);
+
+      // 渲染结果
+      document.getElementById('output').textContent =
+        json.map((r,i) =>
+          `人脸${i+1}: 对比人类智慧学家的相似度 ${(r.sim*100).toFixed(2)}%, IQ ${r.iq.toFixed(1)} —— ${r.label}`
+        ).join('\n');
+
+    } catch (err) {
+      console.error('预测出错:', err);
+      document.getElementById('output').textContent = '预测过程出现错误，请检查控制台。';
+    }
+  };
+  </script>
+</body>
+</html>
