@@ -1,22 +1,26 @@
-# 1. 基于轻量 Python 镜像
+# Dockerfile
 FROM python:3.10-slim
 
-# 2. 指定工作目录
+# 1. 切换到工作目录
 WORKDIR /app
 
-# 3. 先复制 requirements.txt，以便利用 Docker 缓存加速
-COPY requirements.txt .
+# 2. 安装系统依赖（Facenet-PyTorch 需要一些底层库）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      build-essential \
+      libglib2.0-0 libsm6 libxrender1 libfontconfig1 \
+    && rm -rf /var/lib/apt/lists/*
 
-# 4. 安装 CPU-only PyTorch + 其它依赖
+# 3. 复制并安装 Python 依赖
+COPY requirements.txt .
 RUN pip install --upgrade pip setuptools wheel \
  && pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu \
  && pip install -r requirements.txt
 
-# 5. 复制项目代码
+# 4. 复制项目所有源代码
 COPY . .
 
-# 6. 暴露端口（Railway 会自动设置 $PORT 环境变量）
+# 5. 暴露端口（Railway 会提供 $PORT 环境变量）
 EXPOSE 3000
 
-# 7. 启动命令，绑定到 $PORT
-CMD ["sh", "-c", "gunicorn app:app --bind 0.0.0.0:$PORT"]
+# 6. 启动命令
+CMD ["sh","-c","gunicorn app:app --bind 0.0.0.0:$PORT"]
