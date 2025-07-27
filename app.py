@@ -23,7 +23,7 @@ HTML = '''
 </head>
 <body class="p-5">
   <div class="container">
-    <h1 class="mb-4">3D检测器，测测你是3D吗？ </h1>
+    <h1 class="mb-4">3D检测器-检测你是不是3D! </h1>
     <form method="post" enctype="multipart/form-data">
       <div class="mb-3">
         <input class="form-control" type="file" name="file" accept="image/*" required>
