@@ -1,7 +1,2 @@
 flask
-gunicorn
-facenet-pytorch
-numpy
-Pillow
 scipy
-tqdm
