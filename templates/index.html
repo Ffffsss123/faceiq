@@ -24,8 +24,8 @@
 
   // 1. 预加载模型
   Promise.all([
-    faceapi.nets.ssdMobilenetv1.loadFromUri('/static/models'),
-    faceapi.nets.faceRecognitionNet.loadFromUri('/static/models'),
+    faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights'),
+    faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights'),
   ]).then(() => {
     console.log('✔ 模型加载完成');
     document.getElementById('output').textContent = '模型加载完成！请选择图片。';
