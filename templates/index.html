@@ -6,33 +6,65 @@
   <script defer src="/static/face-api.min.js"></script>
 </head>
 <body>
-  <h1>3D检测器-检测你是不是3D! !</h1>
+  <h1>3D检测器 – 检测你是不是3D!!</h1>
+
+  <!-- 选择文件 -->
   <input type="file" id="upload" accept="image/*">
+  <!-- 新增：开始预测按钮 -->
+  <button id="goBtn">开始预测</button>
+
+  <!-- 结果输出 -->
   <pre id="output"></pre>
 
 <script>
+let uploadedFile = null;
+
+// 1. 模型预加载
 Promise.all([
   faceapi.nets.ssdMobilenetv1.loadFromUri('/static/models'),
   faceapi.nets.faceRecognitionNet.loadFromUri('/static/models'),
 ]).then(() => {
-  document.getElementById('upload').onchange = async e => {
-    const img = await faceapi.bufferToImage(e.target.files[0]);
-    const dets = await faceapi.detectAllFaces(img)
-                         .withFaceLandmarks()
-                         .withFaceDescriptors();
-    const descriptors = dets.map(d => Array.from(d.descriptor));
-    const res = await fetch('/predict', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({descriptors})
-    });
-    const json = await res.json();
-    document.getElementById('output').textContent =
-      json.map((r,i) =>
-        `人脸${i+1}: 对比人类智慧学家的相似度 ${(r.sim*100).toFixed(2)}%, IQ ${r.iq.toFixed(1)} —— ${r.label}`
-      ).join('\n');
-  };
+  console.log('模型加载完成，您可以上传图片并点击“开始预测”。');
 });
+
+// 2. 缓存选中的文件
+document.getElementById('upload').onchange = e => {
+  uploadedFile = e.target.files[0];
+  document.getElementById('output').textContent = '已选择：' + uploadedFile.name;
+};
+
+// 3. 点击按钮时执行预测
+document.getElementById('goBtn').onclick = async () => {
+  if (!uploadedFile) {
+    alert('请先选择一张图片！');
+    return;
+  }
+
+  // 转成 Image 并检测
+  const img = await faceapi.bufferToImage(uploadedFile);
+  const dets = await faceapi.detectAllFaces(img)
+                       .withFaceLandmarks()
+                       .withFaceDescriptors();
+  if (dets.length === 0) {
+    document.getElementById('output').textContent = '未检测到人脸，请换张清晰的正面照片。';
+    return;
+  }
+
+  // 提取 descriptor 并发给后端
+  const descriptors = dets.map(d => Array.from(d.descriptor));
+  const res = await fetch('/predict', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({descriptors})
+  });
+  const json = await res.json();
+
+  // 渲染结果
+  document.getElementById('output').textContent =
+    json.map((r,i) =>
+      `人脸${i+1}: 对比人类智慧学家的相似度 ${(r.sim*100).toFixed(2)}%, IQ ${r.iq.toFixed(1)} —— ${r.label}`
+    ).join('\n');
+};
 </script>
 </body>
 </html>
