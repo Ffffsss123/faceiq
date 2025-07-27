@@ -1,8 +1,16 @@
+# 告诉 pip 到官方 PyTorch CPU 源去找包
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 flask
 gunicorn
+werkzeug
+
 facenet-pytorch
-torch
-torchvision
+
+# +cpu 后缀用来确保拿到 CPU-only 的 wheel
+torch==2.2.2+cpu
+torchvision==0.17.2+cpu
+
 numpy
 Pillow
 scipy
