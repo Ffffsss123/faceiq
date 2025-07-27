@@ -8,9 +8,8 @@ werkzeug
 facenet-pytorch
 
 # +cpu 后缀用来确保拿到 CPU-only 的 wheel
-torch==2.2.2+cpu
-torchvision==0.17.2+cpu
-
+torch
+torchvision
 numpy
 Pillow
 scipy
