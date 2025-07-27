@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>测测你是3D吗?来试试吧!</title>
+  <script defer src="/static/face-api.min.js"></script>
+</head>
+<body>
+  <h1>测测你是3D吗?来试试吧!</h1>
+  <input type="file" id="upload" accept="image/*">
+  <pre id="output"></pre>
+
+<script>
+Promise.all([
+  faceapi.nets.ssdMobilenetv1.loadFromUri('/static/models'),
+  faceapi.nets.faceRecognitionNet.loadFromUri('/static/models'),
+]).then(() => {
+  document.getElementById('upload').onchange = async e => {
+    const img = await faceapi.bufferToImage(e.target.files[0]);
+    const dets = await faceapi.detectAllFaces(img)
+                         .withFaceLandmarks()
+                         .withFaceDescriptors();
+    const descriptors = dets.map(d => Array.from(d.descriptor));
+    const res = await fetch('/predict', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({descriptors})
+    });
+    const json = await res.json();
+    document.getElementById('output').textContent =
+      json.map((r,i) =>
+        `人脸${i+1}: 相似度 ${(r.sim*100).toFixed(2)}%, IQ ${r.iq.toFixed(1)} —— ${r.label}`
+      ).join('\n');
+  };
+});
+</script>
+</body>
+</html>
