@@ -1,14 +1,11 @@
-# 第一行指定 PyTorch CPU-only 源
 --extra-index-url https://download.pytorch.org/whl/cpu
 
-# 安装官方预编译的 CPU-only torch 与 torchvision
 torch
 torchvision
 
-# 其它纯 Python 包，3.10 下都能 pip wheel 成功
 flask
 gunicorn
-facenet-pytorch==2.5.0
+facenet-pytorch
 numpy
 Pillow
 scipy
