@@ -69,6 +69,6 @@ def get_user_iq_scores_multi(image_path, reference_embedding, base_iq=140):
     results = []
     for emb in embs:
         sim, iq = get_user_iq_score(emb, reference_embedding, base_iq)
-        label = '恭喜你！识别为正常人类' if sim < 0.7 else '不好意思! 经过大数据识别, 你是个3D，建议你立即联系潘宏培训！'
+        label = '恭喜你！识别为正常人类' if sim < 0.7 else '不好意思!--经过大数据识别--你是个3D,建议你联系潘宏训练自己'
         results.append((sim, iq, label))
     return results
