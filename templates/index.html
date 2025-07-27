@@ -29,7 +29,7 @@ Promise.all([
     const json = await res.json();
     document.getElementById('output').textContent =
       json.map((r,i) =>
-        `人脸${i+1}: 相似度 ${(r.sim*100).toFixed(2)}%, IQ ${r.iq.toFixed(1)} —— ${r.label}`
+        `人脸${i+1}: 对比人类智慧学家的相似度 ${(r.sim*100).toFixed(2)}%, IQ ${r.iq.toFixed(1)} —— ${r.label}`
       ).join('\n');
   };
 });
