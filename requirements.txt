@@ -1,10 +1,4 @@
---extra-index-url https://download.pytorch.org/whl/cpu
+
 flask
-gunicorn
-torchvision
-torch
-facenet-pytorch
-numpy
-Pillow
 scipy
-tqdm
+
